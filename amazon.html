@@ -1,118 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
-<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Crop Tool</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #f4f4f4;
-    }
-    .container {
-        max-width: 600px;
-        width: 100%;
-        text-align: center;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    }
-    #drop-area {
-        border: 2px dashed #ccc;
-        padding: 20px;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-    #file-list {
-        margin-top: 20px;
-        text-align: left;
-    }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Cropper</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+
 </head>
 <body>
-<div class="container">
-    <h2>PDF Crop Tool</h2>
-    <div id="drop-area" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
-        <p>Drag and drop a PDF file here or click to select</p>
-        <input type="file" id="file-input" onchange="fileInputChange(event);" style="display: none;">
-    </div>
-    <py-script src="crop.py">
-
-    </py-script>
-    <div id="file-list"></div>
-    <button id="download-btn" onclick="downloadFiles();" style="display: none;">Download Cropped PDFs</button>
-</div>
-
-<script>
-    function dragOverHandler(event) {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-    }
-
-    function dropHandler(event) {
-        event.preventDefault();
-        const fileList = event.dataTransfer.files;
-        handleFiles(fileList);
-    }
-
-    function fileInputChange(event) {
-        const fileList = event.target.files;
-        handleFiles(fileList);
-    }
-
-    function handleFiles(fileList) {
-        const dropArea = document.getElementById('drop-area');
-        const fileListContainer = document.getElementById('file-list');
-        const downloadBtn = document.getElementById('download-btn');
-        fileListContainer.innerHTML = '';
-
-        for (const file of fileList) {
-            const listItem = document.createElement('div');
-            listItem.textContent = file.name;
-            fileListContainer.appendChild(listItem);
-        }
-
-        if (fileList.length > 0) {
-            downloadBtn.style.display = 'block';
-        } else {
-            downloadBtn.style.display = 'none';
-        }
-    }
-
-    async function downloadFiles() {
-        const fileList = document.getElementById('file-input').files;
-        const labelDimensions = [4 * 72, 6 * 72]; // Convert inches to points
-        const formData = new FormData();
-        formData.append('label_dimensions', JSON.stringify(labelDimensions));
-        for (const file of fileList) {
-            formData.append('pdf_files', file);
-        }
-
-        const response = await fetch('/crop-pdf', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cropped_pdfs.zip';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-    }
-</script>
+  <input type="file" id="pdfInput" accept="application/pdf">
+  <div id="output"></div>
+  <script src="scripts.js"></script>
 </body>
 </html>
