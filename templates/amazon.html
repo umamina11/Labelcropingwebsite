@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to our Website</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        body{
+        
+        background-image: url(/static/images/obg.jpg);
+        background-repeat: no-repeat;
+        
+        background-position:center;
+    
+        background-size: cover;
+       background-attachment: fixed;
+    }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Want help with labels?</h1>
+    </header>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/amazon">Flipkart</a>
+        
+        <a href="/meesho">Meesho</a>
+        <a href="/glassdoor">Glassdoor</a>
+    </nav>
+    <div class="container">
+        <form action='/upload' method="post" enctype="multipart/form-data" id="uploadForm">
+            <div id="dropArea">
+                <label for="file">Drag and drop PDF File here or click to select:</label><br>
+                <input type="file" id="file" name="file" accept=".pdf" onchange="handleFileChange(event)">
+            </div>
+            <div id="fileNameDisplay"></div>
+    
+            <label for="output_folder">Output Folder Name:</label><br>
+            <input type="text" id="output_folder" name="output_folder" required><br><br>
+    
+            <input type="submit" value="Upload and Process">
+        </form>
+    </div>
+    <hr>
+    <div class="text-container">
+        <div class="image-container">
+            <img src="/static/images/amazon.jpg" alt="Image" class="image">
+        </div>
+        <div class="text">Amazon, a global e-commerce powerhouse, has revolutionized online shopping since its inception in 1994. With its extensive product range and 
+            unmatched convenience, Amazon boasts staggering annual sales, shaping consumer habits worldwide. Our website complements this ecosystem by offering tools 
+            to streamline operations for businesses operating on Amazon's platform. From label generation to inventory management, we empower sellers to navigate the 
+            complexities of e-commerce, enhancing their efficiency and success in the Amazon marketplace.
+        </div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+    
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+    
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+    
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+    
+        function highlight() {
+            dropArea.classList.add('highlight');
+        }
+    
+        function unhighlight() {
+            dropArea.classList.remove('highlight');
+        }
+    
+        dropArea.addEventListener('drop', handleDrop, false);
+    
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+    
+            document.getElementById('file').files = files;
+            displayFileName(files[0]);
+        }
+    
+        function handleFileChange(event) {
+            const file = event.target.files[0];
+            displayFileName(file);
+        }
+    
+        function displayFileName(file) {
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            fileNameDisplay.textContent = `File name: ${file.name}`;
+        }
+    </script>
+    
+    
+    <footer>
+        <a href="#" class="facebook-icon"><i class="fab fa-facebook"></i></a>
+        <a href="#" class="twitter-icon"><i class="fab fa-twitter"></i></a>
+        <a href="#" class="instagram-icon"><i class="fab fa-instagram"></i></a>
+        <a href="#" class="linkedin-icon"><i class="fab fa-linkedin"></i></a>
+        <p>&copy; 2024 JustMakeIt. All rights reserved.</p>
+    </footer>
+    
+</body>
+</html>
