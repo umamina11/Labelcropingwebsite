@@ -58,27 +58,27 @@ This command will start the Flask development server, and you can access the app
 
 
 ## Modules 
-Flask: Flask is a web framework for Python used to build web applications. It is used to define routes, handle HTTP requests, and render HTML templates.
+Flask: Flask is a web framework for Python used to build web applications. It is used to define routes, handle HTTP requests, and render HTML templates.<br>
 PyPDF2: PyPDF2 is a library for working with PDF files in Python. It is used in the code to read, manipulate, and write PDF files. Specifically, it is used to split each page 
-of the uploaded PDF file into upper and lower halves.
+of the uploaded PDF file into upper and lower halves.<br>
 os: The os module provides a way to interact with the operating system. In the code, it is used to perform operations related to file and directory manipulation, such as creating directories (os.makedirs) 
-and listing directory contents (os.listdir).
-tempfile: The tempfile module provides functions to create temporary files and directories. In the code, it is used to create a temporary file path for storing the uploaded PDF file before processing.
-render_template: render_template is a function provided by Flask for rendering HTML templates. It is used to render HTML templates that are served to the client.
-request: The request module in Flask provides access to incoming request data such as form data, file uploads, and request headers. It is used to handle form submissions and file uploads in the code.
-redirect: The redirect function in Flask is used to redirect the client to a different URL. It is used in the code to redirect the client to a different page after form submission or file processing.
-url_for: The url_for function in Flask is used to generate URLs for endpoint functions. It is used in the code to generate URLs for redirecting the client and creating download links.
-send_from_directory: The send_from_directory function in Flask is used to send files from a specified directory to the client. It is used in the code to serve processed PDF files for download.
+and listing directory contents (os.listdir).<br>
+tempfile: The tempfile module provides functions to create temporary files and directories. In the code, it is used to create a temporary file path for storing the uploaded PDF file before processing.<br>
+render_template: render_template is a function provided by Flask for rendering HTML templates. It is used to render HTML templates that are served to the client.<br>
+request: The request module in Flask provides access to incoming request data such as form data, file uploads, and request headers. It is used to handle form submissions and file uploads in the code.<br>
+redirect: The redirect function in Flask is used to redirect the client to a different URL. It is used in the code to redirect the client to a different page after form submission or file processing.<br>
+url_for: The url_for function in Flask is used to generate URLs for endpoint functions. It is used in the code to generate URLs for redirecting the client and creating download links.<br>
+send_from_directory: The send_from_directory function in Flask is used to send files from a specified directory to the client. It is used in the code to serve processed PDF files for download.<br>
 
 ## Functionalities 
 Rendering HTML Templates: The application defines routes for rendering different HTML templates (index, amazon, flipkart, meesho, glassdoor). These routes are accessed via 
-their respective URLs and serve HTML content to the client.
+their respective URLs and serve HTML content to the client.<br>
 File Upload: The application allows users to upload PDF files via a form submission. The form contains an input field for selecting a PDF file (<input type="file">) and an input field for 
-specifying an output folder name. Upon submission, the file is uploaded to the server.
+specifying an output folder name. Upon submission, the file is uploaded to the server.<br>
 PDF Processing: After uploading a PDF file, the application processes the file using the split_and_crop_pdf function. This function splits each page of the PDF file into upper and lower halves and 
-saves them as separate PDF files in an output folder. The processing is done using the PyPDF2 library.
+saves them as separate PDF files in an output folder. The processing is done using the PyPDF2 library.<br>
 File Download: Once the PDF file is processed, the application allows users to download the processed files. It provides a list of processed files in the output folder and generates download links 
-for each file. Clicking on a download link allows the user to download the corresponding processed PDF file.
+for each file. Clicking on a download link allows the user to download the corresponding processed PDF file.<br>
 
 ## Usage
 
