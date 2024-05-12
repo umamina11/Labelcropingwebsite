@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,31 +11,33 @@
     
     <link rel="stylesheet" href="/static/css/main.css">
     <style>
-        body {
-            background-image: url(/static/images/bbbg.jpg);
-            background-repeat: no-repeat;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        
-        /* Adjust background size for different screen sizes */
-        @media (max-width: 768px) {
-            body {
-                background-size: contain;
-            }
-        }
-        
-        @media (min-width: 768px) and (max-width: 1200px) {
-            body {
-                background-size: cover;
-            }
-        }
-        
-        @media (min-width: 1201px) {
-            body {
-                background-size: cover;
-            }
-        }
+      body {
+        background-image: url(/static/images/bbbg.jpg);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 100% auto;
+        background-attachment: fixed;
+}
+
+/* Adjust background size for different screen sizes */
+@media (max-width: 768px) {
+    body {
+        background-size: contain;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    body {
+        background-size: cover;
+    }
+}
+
+@media (min-width: 1201px) {
+    body {
+        background-size: cover;
+    }
+}
+    
     </style>
 </head>
 <body>
@@ -43,25 +47,22 @@
 
     <nav>
         <a href="/">Home</a>
+        <a href="/amazon">Amazon</a>
         <a href="/flipkart">Flipkart</a>
-        
         <a href="/meesho">Meesho</a>
         <a href="/glowroad">Glowroad</a>
-        <a href="/merge">Merge PDFs</a>
         <a href="/QRCode">QR-Code</a>
     </nav>
     <div class="container">
-        <form action='/upload' method="post" enctype="multipart/form-data" id="uploadForm">
-            <div id="dropArea">
-                <label for="file">Drag and drop PDF File here or click to select:</label><br>
-                <input type="file" id="file" name="file" accept=".pdf" onchange="handleFileChange(event)">
+        <form action="/merge_pdfs" method="post" enctype="multipart/form-data" id="uploadForm">
+            <div id="dropArea" class="highlight">
+                <label for="files">Drag and drop PDF Files here or click to select:</label><br>
+                <input type="file" id="files" name="files" multiple accept=".pdf" onchange="handleFileChange(event)">
             </div>
-            <div id="fileNameDisplay"></div>
-    
-            <label for="output_folder">Output Folder Name:</label><br>
-            <input type="text" id="output_folder" name="output_folder" required><br><br>
-    
-            <input type="submit" value="Upload and Process">
+            <div id="fileNamesDisplay"></div>
+            <br>
+          
+            <input type="submit" value="Merge PDFs">
         </form>
     </div>
     <hr>
@@ -69,9 +70,9 @@
     <br>
 
     
-
     <script>
         const dropArea = document.getElementById('dropArea');
+        const fileNamesDisplay = document.getElementById('fileNamesDisplay');
     
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropArea.addEventListener(eventName, preventDefaults, false);
@@ -104,22 +105,24 @@
             const dt = e.dataTransfer;
             const files = dt.files;
     
-            document.getElementById('file').files = files;
-            displayFileName(files[0]);
+            document.getElementById('files').files = files;
+            displayFileNames(files);
         }
     
         function handleFileChange(event) {
-            const file = event.target.files[0];
-            displayFileName(file);
+            const files = event.target.files;
+            displayFileNames(files);
         }
     
-        function displayFileName(file) {
-            const fileNameDisplay = document.getElementById('fileNameDisplay');
-            fileNameDisplay.textContent = `File name: ${file.name}`;
+        function displayFileNames(files) {
+            fileNamesDisplay.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const fileNameItem = document.createElement('div');
+                fileNameItem.textContent = `File name: ${file.name}`;
+                fileNamesDisplay.appendChild(fileNameItem);
+            });
         }
     </script>
-    
-    
     <footer>
         <a href="#" class="facebook-icon"><i class="fab fa-facebook"></i></a>
         <a href="#" class="twitter-icon"><i class="fab fa-twitter"></i></a>
