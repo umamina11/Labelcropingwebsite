@@ -177,20 +177,28 @@ if __name__ == '__main__':
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 
 
-import os
-import PyPDF2
-import tempfile
-from PyPDF2 import PdfMerger
-from flask_dropzone import Dropzone
-from PyPDF2 import PdfFileReader, PdfFileWriter
 
+
+
+from flask import send_from_directory
+import tempfile
+import PyPDF2
+
+import os
+import qrcode
+
+from PyPDF2 import PdfMerger
 
 
 
 
 app = Flask(__name__)
 
+
 UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf'}
+
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
@@ -218,6 +226,19 @@ def glowroad():
 @app.route('/merge')
 def merge():
     return render_template('merge.html')
+
+@app.route('/QRCode')
+def QRCode():
+    return render_template('QRCode.html')
+
+
+@app.route('/fouroption')
+def fouroption():
+    return render_template('fouroption.html')
+
+
+
+## split and crop the labels
 
 def split_and_crop_pdf(input_pdf_path, output_folder):
     if not os.path.exists(output_folder):
@@ -274,54 +295,37 @@ def download_file(filename):
 
 #merge pdf
 
-from flask import Flask, render_template, request, jsonify
-from PyPDF2 import PdfFileMerger
-import os
-import uuid
-
-app = Flask(__name__)
-
-UPLOAD_FOLDER = 'uploads'
-MERGED_FOLDER = 'merged'
-ALLOWED_EXTENSIONS = {'pdf'}
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MERGED_FOLDER'] = MERGED_FOLDER
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def merge_pdfs(input_paths, output_path):
-    merger = PdfFileMerger()
-    for path in input_paths:
-        merger.append(path)
-    merger.write(output_path)
-    merger.close()
-
-@app.route('/merge')
-def merge():
-    return render_template('merge.html')
-
 @app.route('/merge_pdfs', methods=['POST'])
-def merge_pdfs_route():
-    if 'pdfFiles' not in request.files:
-        return jsonify({'success': False, 'error': 'No PDF files uploaded'}), 400
+def merge_pdfs():
+    uploaded_files = request.files.getlist("files")
+    
+    merger = PdfMerger()
+    for file in uploaded_files:
+        merger.append(file)
+    
+    merged_filename = 'merged.pdf'
+    merger.write(merged_filename)
+    merger.close()
+    
+    return send_file(merged_filename, as_attachment=True)
 
-    pdf_files = request.files.getlist('pdfFiles')
-    input_paths = []
 
-    for file in pdf_files:
-        if file and allowed_file(file.filename):
-            filename = str(uuid.uuid4()) + '.pdf'
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            input_paths.append(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        else:
-            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+## QR Code Generator
+@app.route('/generate_qr', methods=['POST'])
+def generate_qr():
+    data = request.form['data']
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
 
-    output_path = os.path.join(app.config['MERGED_FOLDER'], 'merged.pdf')
-    merge_pdfs(input_paths, output_path)
+    # Save the image temporarily
+    img_path = "temp_qr.png"
+    img.save(img_path)
 
-    return jsonify({'success': True, 'file_url': output_path}), 200
+    # Send the file for download
+    return send_file(img_path, as_attachment=True)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     app.run(debug=True)
