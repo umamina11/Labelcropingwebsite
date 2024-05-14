@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Sorting Option</title>
+</head>
+<body>
+    <h1>Choose Sorting Option</h1>
+    <form action="{{ url_for('sort_and_download') }}" method="post" enctype="multipart/form-data">
+        <label for="pdf_file">Upload PDF:</label>
+        <input type="file" name="pdf_file" id="pdf_file" accept=".pdf">
+        <br><br>
+        <label for="sort_by">Sort By:</label>
+        <select name="sort_by" id="sort_by">
+            <option value="quantity">Quantity</option>
+            <option value="courier">Courier</option>
+            <option value="SKU">SKU</option>
+        </select>
+        <br><br>
+        <input type="submit" value="Sort and Download">
+    </form>
+</body>
+</html>
