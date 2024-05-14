@@ -14,8 +14,10 @@ import os
 import qrcode
 
 from PyPDF2 import PdfMerger
-
+from werkzeug.utils import secure_filename
+import re
 from collections import defaultdict
+
 
 
 app = Flask(__name__)
@@ -56,9 +58,6 @@ def QRCode():
     return render_template('QRCode.html')
 
 
-@app.route('/fouroption')
-def fouroption():
-    return render_template('fouroption.html')
 
 
 
@@ -155,45 +154,42 @@ def generate_qr():
 #####
 ######
 #
-def split_and_crop_pdf(input_pdf_path, output_folder):
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
 
-    with open(input_pdf_path, 'rb') as file:
-        reader = PyPDF2.PdfReader(file)
+UPLOAD_FOLDER = 'skusort'
+ALLOWED_EXTENSIONS = {'pdf'}
 
-        for page_num in range(len(reader.pages)):
-            page = reader.pages[page_num]
-            # Crop logic here
-            
-            # Example crop logic for demonstration, adjust according to your needs
-            cropped_page = page.crop(0, 0, 100, 100)  # Crop example: (left, top, right, bottom)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-            writer = PyPDF2.PdfWriter()
-            output_pdf = os.path.join(output_folder, f"page_{page_num + 1}.pdf")
-            writer.add_page(cropped_page)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-            with open(output_pdf, 'wb') as output_file:
-                writer.write(output_file)
-            print(f"Cropped page {page_num + 1} saved as {output_pdf}")
+def extract_sku(text):
+    sku_pattern = r'\b\d{6}\b'
+    skus = re.findall(sku_pattern, text)
+    skus = [int(sku) for sku in skus]
+    return skus
 
-# Function to sort PDF pages by quantity, courier, and SKU
-def sort_pdf_pages(output_folder, sort_by):
-    sorted_files = []
-    # Sort logic based on the chosen sort option
-    if sort_by == 'quantity':
-        # Sort by quantity logic
-        pass
-    elif sort_by == 'courier':
-        # Sort by courier logic
-        pass
-    elif sort_by == 'SKU':
-        # Sort by SKU logic
-        pass
-    return sorted_files
+def process_pdf(file_path):
+    sku_dict = defaultdict(list)
+    with open(file_path, 'rb') as file:
+        reader = PyPDF2.PdfFileReader(file)
+        for page_num in range(reader.numPages):
+            page = reader.getPage(page_num)
+            text = page.extractText()
+            skus = extract_sku(text)
+            for sku in skus:
+                sku_dict[sku].append(page)
+    return sku_dict
 
-@app.route('/upload', methods=['POST'])
-def upload():
+def create_sorted_pdf(sku_dict):
+    output_pdf = PyPDF2.PdfWriter()
+    for sku, pages in sorted(sku_dict.items()):
+        for page in pages:
+            output_pdf.addPage(page)
+    return output_pdf
+
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(request.url)
@@ -201,35 +197,23 @@ def upload():
         if file.filename == '':
             return redirect(request.url)
         if file and allowed_file(file.filename):
-            _, temp_file_path = tempfile.mkstemp(suffix='.pdf')
-            file.save(temp_file_path)
-            output_folder = 'output'
-            split_and_crop_pdf(temp_file_path, output_folder)
-            # Redirect to page for choosing sorting option
-            return redirect(url_for('choose_sorting_option'))
+            filename = file.filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            sku_dict = process_pdf(file_path)
+            sorted_pdf = create_sorted_pdf(sku_dict)
+            sorted_folder = 'sorted_pdfs'
+            os.makedirs(sorted_folder, exist_ok=True)
+            sorted_filename = os.path.join(sorted_folder, 'sorted_labels.pdf')
+            with open(sorted_filename, 'wb') as output_file:
+                sorted_pdf.write(output_file)
+            return 'Labels sorted successfully! <a href="/download">Download sorted labels</a>'
+    return render_template('upload.html')
 
-@app.route('/choose_sorting_option')
-def choose_sorting_option():
-    return render_template('choose_sorting_option.html')
-
-@app.route('/sort_and_download', methods=['POST'])
-def sort_and_download():
-    sort_by = request.form.get('sort_by')
-    output_folder = 'output'
-    sorted_files = sort_pdf_pages(output_folder, sort_by)
-    # Merge sorted PDFs into one
-    merger = PdfMerger()
-    for file_name in sorted_files:
-        file_path = os.path.join(output_folder, file_name)
-        merger.append(file_path)
-    merged_filename = 'sorted_merged.pdf'
-    merger.write(merged_filename)
-    merger.close()
-    # Download the merged and sorted PDF
-    return send_file(merged_filename, as_attachment=True)
-
-# Add route for downloading individual sorted PDFs if needed
+@app.route('/download')
+def download_file():
+    sorted_filename = 'sorted_pdfs/sorted_labels.pdf'
+    return redirect(url_for('static', filename=sorted_filename), code=301)
 
 if __name__ == '__main__':
     app.run(debug=True)
-
