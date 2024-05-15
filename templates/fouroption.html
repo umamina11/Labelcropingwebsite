@@ -3,20 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Files</title>
+    <title>Four Option</title>
 </head>
 <body>
-    <h1>Download Files</h1>
+    <h1>Welcome to Four Option Page</h1>
+    <p>Choose an option:</p>
     <ul>
-        {% for file in files %}
-        <li><a href="/download/{{ file }}">{{ file }}</a></li>
-        {% endfor %}
-    </ul>
-    <h2>Sort By:</h2>
-    <ul>
-        <li><a href="/sort/SKU">Sort by SKU</a></li>
-        <li><a href="/sort/Courier%20Wise">Sort By Courier Wise</a></li>
-        <li><a href="/sort/Quantity%20Wise">Sort by Quantity Wise</a></li>
+        <li><a href="{{ url_for('uploadsort') }}">Upload and Sort PDF</a></li>
+        <li><a href="{{ url_for('choose_sorting_option') }}">Choose Sorting Option</a></li>
     </ul>
 </body>
 </html>
