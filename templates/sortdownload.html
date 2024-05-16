@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorted SKUs</title>
+</head>
+<body>
+    <h1>Sorted SKUs</h1>
+    <ul>
+        {% for sku in sorted_skus %}
+        <li>{{ sku }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/download_sorted_pdf">Download Sorted PDF</a>
+</body>
+</html>
