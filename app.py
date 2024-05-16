@@ -3,13 +3,10 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 
 
-
-
-
 from flask import send_from_directory
 import tempfile
 import PyPDF2
-
+import io
 import os
 import qrcode
 
@@ -153,67 +150,103 @@ def generate_qr():
 ####
 #####
 ######
-#
 
-UPLOAD_FOLDER = 'skusort'
-ALLOWED_EXTENSIONS = {'pdf'}
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+'''
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def extract_sku(text):
-    sku_pattern = r'\b\d{6}\b'
-    skus = re.findall(sku_pattern, text)
-    skus = [int(sku) for sku in skus]
+def extract_skus_from_pdf(pdf_file):
+    skus = []
+    reader = PyPDF2.PdfReader(pdf_file)
+    for page_num in range(len(reader.pages)):
+        page = reader.pages[page_num]
+        text = page.extract_text()
+        sku_matches = re.findall(r'\b[0-9A-Za-z]{6}\b', text)  # Adjust the regex pattern as per your SKU format
+        skus.extend(sku_matches)
     return skus
 
-def process_pdf(file_path):
-    sku_dict = defaultdict(list)
-    with open(file_path, 'rb') as file:
-        reader = PyPDF2.PdfFileReader(file)
-        for page_num in range(reader.numPages):
-            page = reader.getPage(page_num)
-            text = page.extractText()
-            skus = extract_sku(text)
-            for sku in skus:
-                sku_dict[sku].append(page)
-    return sku_dict
 
-def create_sorted_pdf(sku_dict):
-    output_pdf = PyPDF2.PdfWriter()
-    for sku, pages in sorted(sku_dict.items()):
-        for page in pages:
-            output_pdf.addPage(page)
-    return output_pdf
 
-@app.route('/', methods=['GET', 'POST'])
-def upload_file():
+def sort_skus(skus):
+    sorted_skus = sorted(skus)
+    return sorted_skus
+
+
+def create_sorted_pdf(skus):
+    pdf_writer = PyPDF2.PdfWriter()
+    buffer = io.BytesIO()
+
+    for sku in skus:
+        pdf_writer.add_blank_page(width=612, height=792)
+
+    pdf_writer.write(buffer)
+    buffer.seek(0)
+
+    return buffer
+
+
+
+@app.route('/sort')
+def sort():
+    return render_template('sort.html')
+
+from flask import send_file
+
+@app.route('/process_pdf', methods=['POST'])
+def process_pdf():
     if request.method == 'POST':
         if 'file' not in request.files:
-            return redirect(request.url)
+            return render_template('sort.html', error='No file part')
         file = request.files['file']
         if file.filename == '':
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = file.filename
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            sku_dict = process_pdf(file_path)
-            sorted_pdf = create_sorted_pdf(sku_dict)
-            sorted_folder = 'sorted_pdfs'
-            os.makedirs(sorted_folder, exist_ok=True)
-            sorted_filename = os.path.join(sorted_folder, 'sorted_labels.pdf')
-            with open(sorted_filename, 'wb') as output_file:
-                sorted_pdf.write(output_file)
-            return 'Labels sorted successfully! <a href="/download">Download sorted labels</a>'
-    return render_template('upload.html')
+            return render_template('sort.html', error='No selected file')
+        if file:
+            _, temp_file_path = tempfile.mkstemp(suffix='.pdf')
+            file.save(temp_file_path)
+            skus = extract_skus_from_pdf(temp_file_path)
+            sorted_skus = sort_skus(skus)
+            sorted_pdf = create_sorted_pdf(sorted_skus)
+            return send_file(
+                sorted_pdf,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name='sorted_skus.pdf'  # Specify the filename here
+            )
 
-@app.route('/download')
-def download_file():
-    sorted_filename = 'sorted_pdfs/sorted_labels.pdf'
-    return redirect(url_for('static', filename=sorted_filename), code=301)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+    '''
+
+
+@app.route('/sort', methods=['POST'])
+def sort():
+    # Check if the POST request contains a file
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    
+    # Check if the file has a PDF extension
+    if file.filename.endswith('.pdf'):
+        # Read the PDF file
+        pdf_reader = PyPDF2.PdfFileReader(file)
+        
+        # Extract text from all pages
+        all_text = ''
+        for page_num in range(pdf_reader.numPages):
+            page = pdf_reader.getPage(page_num)
+            all_text += page.extractText()
+        
+        # Extract SKU numbers using regex
+        sku_numbers = re.findall(r'SKU\d+', all_text)
+        
+        # Sort SKU numbers
+        sorted_sku_numbers = sorted(sku_numbers)
+        
+        return jsonify({'sku_numbers': sorted_sku_numbers}), 200
+    else:
+        return jsonify({'error': 'File provided is not a PDF'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
