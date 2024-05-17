@@ -216,37 +216,159 @@ def process_pdf():
 
 if __name__ == "__main__":
     app.run(debug=True)
-    '''
-
-
-@app.route('/sort', methods=['POST'])
-def sort():
-    # Check if the POST request contains a file
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-    
-    file = request.files['file']
-    
-    # Check if the file has a PDF extension
-    if file.filename.endswith('.pdf'):
-        # Read the PDF file
-        pdf_reader = PyPDF2.PdfFileReader(file)
-        
-        # Extract text from all pages
-        all_text = ''
-        for page_num in range(pdf_reader.numPages):
-            page = pdf_reader.getPage(page_num)
-            all_text += page.extractText()
-        
-        # Extract SKU numbers using regex
-        sku_numbers = re.findall(r'SKU\d+', all_text)
-        
-        # Sort SKU numbers
-        sorted_sku_numbers = sorted(sku_numbers)
-        
-        return jsonify({'sku_numbers': sorted_sku_numbers}), 200
-    else:
-        return jsonify({'error': 'File provided is not a PDF'}), 400
 
 if __name__ == '__main__':
+    app.run(debug=True)
+    '''
+    
+    
+    '''
+    ## sort 
+def extract_skus_from_pdf(pdf_file):
+    skus = []
+    reader = PyPDF2.PdfReader(pdf_file)
+    for page_num in range(len(reader.pages)):
+        page = reader.pages[page_num]
+        text = page.extract_text()
+        sku_matches = re.findall(r'\b[0-9A-Za-z]{6}\b', text)
+        skus.extend(sku_matches)
+    return skus
+
+def sort_skus(skus):
+    sorted_skus = sorted(skus)
+    return sorted_skus
+
+def create_sorted_pdf(skus, pdf_file):
+    pdf_writer = PyPDF2.PdfWriter()
+
+    with open(pdf_file, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        for sku in skus:
+            try:
+                page_num = int(sku) - 1
+            except ValueError:
+                print(f"Invalid SKU: {sku}. Skipping...")
+                continue
+
+            if 0 <= page_num < len(reader.pages):
+                page = reader.pages[page_num]
+                pdf_writer.add_page(page)
+            else:
+                print("Invalid page number:", page_num)
+
+    buffer = io.BytesIO()
+    pdf_writer.write(buffer)
+    buffer.seek(0)
+
+    return buffer
+
+@app.route('/sort')
+def sort():
+    return render_template('sort.html')
+
+@app.route('/process_pdf', methods=['POST'])
+def process_pdf():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return render_template('sort.html', error='No file part')
+        file = request.files['file']
+        if file.filename == '':
+            return render_template('sort.html', error='No selected file')
+        if file:
+            _, temp_file_path = tempfile.mkstemp(suffix='.pdf')
+            file.save(temp_file_path)
+            skus = extract_skus_from_pdf(temp_file_path)
+            sorted_skus = sort_skus(skus)
+            sorted_pdf = create_sorted_pdf(sorted_skus, temp_file_path)
+            return send_file(
+                sorted_pdf,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name='sorted_skus.pdf'
+            )
+
+@app.route('/download_sorted')
+def download_sorted():
+    return render_template('sorted.html')
+
+if __name__ == "__main__":
+    app.run(debug=True)
+    
+    
+    '''
+def extract_skus_and_quantities_from_pdf(pdf_file):
+    skus_with_quantities = {}
+    reader = PyPDF2.PdfReader(pdf_file)
+    for page_num in range(len(reader.pages)):
+        page = reader.pages[page_num]
+        text = page.extract_text()
+        matches = re.findall(r'(\b[0-9A-Za-z]{6}\b)\s*-\s*(\d+)', text)
+        for match in matches:
+            sku, quantity = match
+            if sku in skus_with_quantities:
+                skus_with_quantities[sku] += int(quantity)
+            else:
+                skus_with_quantities[sku] = int(quantity)
+    return skus_with_quantities
+
+def sort_skus_by_quantity(skus_with_quantities):
+    sorted_skus = sorted(skus_with_quantities.items(), key=lambda x: x[1], reverse=True)
+    return sorted_skus
+
+def create_sorted_pdf_with_quantity(sorted_skus_with_quantities, pdf_file):
+    pdf_writer = PyPDF2.PdfWriter()
+
+    with open(pdf_file, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        for sku, _ in sorted_skus_with_quantities:
+            try:
+                page_num = int(sku) - 1
+            except ValueError:
+                print(f"Invalid SKU: {sku}. Skipping...")
+                continue
+
+            if 0 <= page_num < len(reader.pages):
+                page = reader.pages[page_num]
+                pdf_writer.add_page(page)
+            else:
+                print("Invalid page number:", page_num)
+
+    buffer = io.BytesIO()
+    pdf_writer.write(buffer)
+    buffer.seek(0)
+
+    return buffer
+
+@app.route('/sort')
+def sort():
+    return render_template('sort.html')
+
+@app.route('/process_pdf', methods=['POST'])
+def process_pdf():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return render_template('sort.html', error='No file part')
+        file = request.files['file']
+        if file.filename == '':
+            return render_template('sort.html', error='No selected file')
+        if file:
+            _, temp_file_path = tempfile.mkstemp(suffix='.pdf')
+            file.save(temp_file_path)
+            
+            # Sort by SKU
+            skus_with_quantities = extract_skus_and_quantities_from_pdf(temp_file_path)
+            sorted_skus_with_quantities = sorted(skus_with_quantities.items())
+            sorted_pdf_sku = create_sorted_pdf_with_quantity(sorted_skus_with_quantities, temp_file_path)
+            
+            # Sort by Quantity
+            sorted_skus_by_quantity = sort_skus_by_quantity(skus_with_quantities)
+            sorted_pdf_quantity = create_sorted_pdf_with_quantity(sorted_skus_by_quantity, temp_file_path)
+
+            return render_template('sorted.html', sorted_pdf_sku=sorted_pdf_sku, sorted_pdf_quantity=sorted_pdf_quantity)
+
+@app.route('/download_sorted')
+def download_sorted():
+    return render_template('sorted.html')
+
+if __name__ == "__main__":
     app.run(debug=True)
