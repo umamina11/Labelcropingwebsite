@@ -15,7 +15,10 @@ from werkzeug.utils import secure_filename
 import re
 from collections import defaultdict
 
-
+import tempfile
+from fpdf import FPDF
+from PyPDF2 import PdfFileReader
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -217,7 +220,7 @@ if __name__ == '__main__':
     '''
     
     
-
+'''
     ## sort 
 def extract_skus_from_pdf(pdf_file):
     skus = []
@@ -289,3 +292,49 @@ def download_sorted():
 if __name__ == "__main__":
     app.run(debug=True)
     
+'''
+def extract_data_from_pdf(pdf_path):
+    reader = PdfFileReader(open(pdf_path, 'rb'))
+    data = []
+    for page_num in range(reader.numPages):
+        text = reader.getPage(page_num).extract_text()
+        lines = text.split('\n')
+        # Parsing logic to extract data based on the document structure
+        for line in lines:
+            if "SKU" in line:
+                sku = line.split(" ")[1]
+            if "Qty" in line:
+                qty = line.split(" ")[1]
+            if "Courier" in line:
+                courier = line.split(" ")[1]
+        data.append({"SKU": sku, "Qty": qty, "Courier": courier})
+    return pd.DataFrame(data)
+
+@app.route('/other')
+def other():
+    return render_template('other.html')
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return 'No file part'
+    file = request.files['file']
+    if file.filename == '':
+        return 'No selected file'
+    if file and file.filename.endswith('.pdf'):
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(file_path)
+        
+        data = extract_data_from_pdf(file_path)
+        sort_options = request.form.getlist('options')
+        if sort_options:
+            data = data.sort_values(by=sort_options)
+        
+        sorted_file_path = file_path.replace('.pdf', '_sorted.pdf')
+        # Save sorted data to a new PDF (this part requires further implementation)
+        
+        return send_from_directory(app.config['UPLOAD_FOLDER'], os.path.basename(sorted_file_path))
+    return 'Invalid file format'
+
+if __name__ == '__main__':
+    app.run(debug=True)
