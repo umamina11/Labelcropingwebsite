@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!--<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,3 +17,32 @@
     </ul>
 </body>
 </html>
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sort PDF Pages</title>
+</head>
+<body>
+    <h1>Sort PDF Pages</h1>
+    <form action="/sort" method="post">
+        <input type="hidden" name="file_path" value="{{ file_path }}">
+        <label for="sort_key">Sort by:</label>
+        <select name="sort_key" id="sort_key">
+            <option value="quantity">Quantity</option>
+            <option value="sku">SKU</option>
+            <option value="delivery_type">Delivery Type</option>
+        </select>
+        <input type="submit" value="Sort and Download">
+    </form>
+    <h2>PDF Info:</h2>
+    <ul>
+        {% for info in pdf_info %}
+            <li>Page {{ info.page_num }}: Quantity: {{ info.quantity }}, SKU: {{ info.sku }}, Delivery Type: {{ info.delivery_type }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+

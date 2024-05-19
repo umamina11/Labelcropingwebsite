@@ -3,43 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extract and Sort SKU Numbers</title>
+    <title>Sort SKUs from PDF</title>
 </head>
 <body>
-    <h1>Extract and Sort SKU Numbers</h1>
-    <form id="uploadForm" action="/extract_sku" method="post" enctype="multipart/form-data">
-
-        <input type="file" name="file" id="fileInput" accept=".pdf" required>
-        <button type="submit">Upload PDF</button>
+    <h1>Upload PDF to Sort SKUs</h1>
+    <form action="/process_pdf" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Sort SKUs">
     </form>
-
-    <div id="result" style="margin-top: 20px;"></div>
-
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            var form = event.target;
-            var formData = new FormData(form);
-
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                var resultDiv = document.getElementById('result');
-                if (data.error) {
-                    resultDiv.innerHTML = '<p style="color: red;">Error: ' + data.error + '</p>';
-                } else {
-                    var skuNumbers = data.sku_numbers.join(', ');
-                    resultDiv.innerHTML = '<p>Sorted SKU Numbers: ' + skuNumbers + '</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    </script>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
 </body>
 </html>
